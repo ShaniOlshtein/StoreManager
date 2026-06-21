@@ -1,4 +1,14 @@
+using Entities;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// רישום ה-DbContext ומנגנון החיבור ל-MySQL
+builder.Services.AddDbContext<StoreDbContext>(options =>
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+    ));
 
 // Add services to the container.
 
