@@ -3,11 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// шйщен д-DbContext еорвреп дзйбеш м-MySQL
+// пїЅпїЅпїЅпїЅпїЅ пїЅ-DbContext пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ-MySQL
 builder.Services.AddDbContext<StoreDbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+        new MySqlServerVersion(new Version(8, 0, 0))
     ));
 
 // Add services to the container.
