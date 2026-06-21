@@ -1,3 +1,4 @@
+using API.DTOs;
 using Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,45 +18,39 @@ public class OrdersController : ControllerBase
 
     // GET api/orders
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Order>>> GetAll()
+    public async Task<ActionResult<IEnumerable<OrderReadDto>>> GetAll()
     {
-        return await _context.Orders.Include(o => o.OrderItems).ThenInclude(oi => oi.Product).ToListAsync();
+        var orders = await _context.Orders.ToListAsync();
+        return Ok(orders.Select(ToReadDto));
     }
 
     // GET api/orders/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<Order>> GetById(int id)
+    public async Task<ActionResult<OrderReadDto>> GetById(int id)
     {
-        var order = await _context.Orders.Include(o => o.OrderItems).ThenInclude(oi => oi.Product).FirstOrDefaultAsync(o => o.Id == id);
-        return order is null ? NotFound() : Ok(order);
+        var order = await _context.Orders.FindAsync(id);
+        return order is null ? NotFound() : Ok(ToReadDto(order));
     }
 
     // POST api/orders
     [HttpPost]
-    public async Task<ActionResult<Order>> Create(Order order)
+    public async Task<ActionResult<OrderReadDto>> Create(OrderWriteDto dto)
     {
+        var order = new Order { CustomerName = dto.CustomerName };
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
+        return CreatedAtAction(nameof(GetById), new { id = order.Id }, ToReadDto(order));
     }
 
     // PUT api/orders/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, Order order)
+    public async Task<IActionResult> Update(int id, OrderWriteDto dto)
     {
-        if (id != order.Id) return BadRequest();
-        _context.Entry(order).State = EntityState.Modified;
+        var order = await _context.Orders.FindAsync(id);
+        if (order is null) return NotFound();
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!await _context.Orders.AnyAsync(o => o.Id == id)) return NotFound();
-            throw;
-        }
-
+        order.CustomerName = dto.CustomerName;
+        await _context.SaveChangesAsync();
         return NoContent();
     }
 
@@ -70,4 +65,11 @@ public class OrdersController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    private static OrderReadDto ToReadDto(Order o) => new()
+    {
+        Id = o.Id,
+        OrderDate = o.OrderDate,
+        CustomerName = o.CustomerName
+    };
 }

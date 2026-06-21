@@ -1,3 +1,4 @@
+using API.DTOs;
 using Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,45 +18,42 @@ public class ProductsController : ControllerBase
 
     // GET api/products
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Product>>> GetAll()
+    public async Task<ActionResult<IEnumerable<ProductReadDto>>> GetAll()
     {
-        return await _context.Products.Include(p => p.Category).ToListAsync();
+        var products = await _context.Products.ToListAsync();
+        return Ok(products.Select(ToReadDto));
     }
 
     // GET api/products/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<Product>> GetById(int id)
+    public async Task<ActionResult<ProductReadDto>> GetById(int id)
     {
-        var product = await _context.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == id);
-        return product is null ? NotFound() : Ok(product);
+        var product = await _context.Products.FindAsync(id);
+        return product is null ? NotFound() : Ok(ToReadDto(product));
     }
 
     // POST api/products
     [HttpPost]
-    public async Task<ActionResult<Product>> Create(Product product)
+    public async Task<ActionResult<ProductReadDto>> Create(ProductWriteDto dto)
     {
+        var product = ToEntity(dto);
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
+        return CreatedAtAction(nameof(GetById), new { id = product.Id }, ToReadDto(product));
     }
 
     // PUT api/products/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, Product product)
+    public async Task<IActionResult> Update(int id, ProductWriteDto dto)
     {
-        if (id != product.Id) return BadRequest();
-        _context.Entry(product).State = EntityState.Modified;
+        var product = await _context.Products.FindAsync(id);
+        if (product is null) return NotFound();
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!await _context.Products.AnyAsync(p => p.Id == id)) return NotFound();
-            throw;
-        }
+        product.Name = dto.Name;
+        product.Price = dto.Price;
+        product.CategoryId = dto.CategoryId;
 
+        await _context.SaveChangesAsync();
         return NoContent();
     }
 
@@ -70,4 +68,19 @@ public class ProductsController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    private static ProductReadDto ToReadDto(Product p) => new()
+    {
+        Id = p.Id,
+        Name = p.Name,
+        Price = p.Price,
+        CategoryId = p.CategoryId
+    };
+
+    private static Product ToEntity(ProductWriteDto dto) => new()
+    {
+        Name = dto.Name,
+        Price = dto.Price,
+        CategoryId = dto.CategoryId
+    };
 }

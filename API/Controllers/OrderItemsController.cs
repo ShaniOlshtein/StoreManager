@@ -1,3 +1,4 @@
+using API.DTOs;
 using Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,46 +18,40 @@ public class OrderItemsController : ControllerBase
 
     // GET api/orderitems
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<OrderItem>>> GetAll()
+    public async Task<ActionResult<IEnumerable<OrderItemReadDto>>> GetAll()
     {
-        return await _context.OrderItems.Include(oi => oi.Product).Include(oi => oi.Order).ToListAsync();
+        var items = await _context.OrderItems.ToListAsync();
+        return Ok(items.Select(ToReadDto));
     }
 
-    // GET api/orderitems/5/3  (orderId/productId)
+    // GET api/orderitems/5/3 (orderId/productId)
     [HttpGet("{orderId}/{productId}")]
-    public async Task<ActionResult<OrderItem>> GetById(int orderId, int productId)
+    public async Task<ActionResult<OrderItemReadDto>> GetById(int orderId, int productId)
     {
-        var item = await _context.OrderItems.Include(oi => oi.Product).Include(oi => oi.Order)
-            .FirstOrDefaultAsync(oi => oi.OrderId == orderId && oi.ProductId == productId);
-        return item is null ? NotFound() : Ok(item);
+        var item = await _context.OrderItems.FindAsync(orderId, productId);
+        return item is null ? NotFound() : Ok(ToReadDto(item));
     }
 
     // POST api/orderitems
     [HttpPost]
-    public async Task<ActionResult<OrderItem>> Create(OrderItem orderItem)
+    public async Task<ActionResult<OrderItemReadDto>> Create(OrderItemWriteDto dto)
     {
-        _context.OrderItems.Add(orderItem);
+        var item = ToEntity(dto);
+        _context.OrderItems.Add(item);
         await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetById), new { orderId = orderItem.OrderId, productId = orderItem.ProductId }, orderItem);
+        return CreatedAtAction(nameof(GetById), new { orderId = item.OrderId, productId = item.ProductId }, ToReadDto(item));
     }
 
     // PUT api/orderitems/5/3
     [HttpPut("{orderId}/{productId}")]
-    public async Task<IActionResult> Update(int orderId, int productId, OrderItem orderItem)
+    public async Task<IActionResult> Update(int orderId, int productId, OrderItemWriteDto dto)
     {
-        if (orderId != orderItem.OrderId || productId != orderItem.ProductId) return BadRequest();
-        _context.Entry(orderItem).State = EntityState.Modified;
+        var item = await _context.OrderItems.FindAsync(orderId, productId);
+        if (item is null) return NotFound();
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!await _context.OrderItems.AnyAsync(oi => oi.OrderId == orderId && oi.ProductId == productId)) return NotFound();
-            throw;
-        }
-
+        item.Quantity = dto.Quantity;
+        item.UnitPrice = dto.UnitPrice;
+        await _context.SaveChangesAsync();
         return NoContent();
     }
 
@@ -71,4 +66,20 @@ public class OrderItemsController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    private static OrderItemReadDto ToReadDto(OrderItem oi) => new()
+    {
+        OrderId = oi.OrderId,
+        ProductId = oi.ProductId,
+        Quantity = oi.Quantity,
+        UnitPrice = oi.UnitPrice
+    };
+
+    private static OrderItem ToEntity(OrderItemWriteDto dto) => new()
+    {
+        OrderId = dto.OrderId,
+        ProductId = dto.ProductId,
+        Quantity = dto.Quantity,
+        UnitPrice = dto.UnitPrice
+    };
 }
