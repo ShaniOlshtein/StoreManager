@@ -1,3 +1,4 @@
+using API.DTOs;
 using Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,45 +18,39 @@ public class CategoriesController : ControllerBase
 
     // GET api/categories
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Category>>> GetAll()
+    public async Task<ActionResult<IEnumerable<CategoryReadDto>>> GetAll()
     {
-        return await _context.Categories.ToListAsync();
+        var categories = await _context.Categories.ToListAsync();
+        return Ok(categories.Select(ToReadDto));
     }
 
     // GET api/categories/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<Category>> GetById(int id)
+    public async Task<ActionResult<CategoryReadDto>> GetById(int id)
     {
-        var category = await _context.Categories.Include(c => c.Products).FirstOrDefaultAsync(c => c.Id == id);
-        return category is null ? NotFound() : Ok(category);
+        var category = await _context.Categories.FindAsync(id);
+        return category is null ? NotFound() : Ok(ToReadDto(category));
     }
 
     // POST api/categories
     [HttpPost]
-    public async Task<ActionResult<Category>> Create(Category category)
+    public async Task<ActionResult<CategoryReadDto>> Create(CategoryWriteDto dto)
     {
+        var category = new Category { Name = dto.Name };
         _context.Categories.Add(category);
         await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
+        return CreatedAtAction(nameof(GetById), new { id = category.Id }, ToReadDto(category));
     }
 
     // PUT api/categories/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, Category category)
+    public async Task<IActionResult> Update(int id, CategoryWriteDto dto)
     {
-        if (id != category.Id) return BadRequest();
-        _context.Entry(category).State = EntityState.Modified;
+        var category = await _context.Categories.FindAsync(id);
+        if (category is null) return NotFound();
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!await _context.Categories.AnyAsync(c => c.Id == id)) return NotFound();
-            throw;
-        }
-
+        category.Name = dto.Name;
+        await _context.SaveChangesAsync();
         return NoContent();
     }
 
@@ -70,4 +65,10 @@ public class CategoriesController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    private static CategoryReadDto ToReadDto(Category c) => new()
+    {
+        Id = c.Id,
+        Name = c.Name
+    };
 }
