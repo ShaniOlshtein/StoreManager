@@ -1,12 +1,12 @@
-using Entities;
+using Common.DTOs;
 
 namespace Services;
 
 public interface ICategoryService
 {
-    Task<IEnumerable<Category>> GetAllAsync();
-    Task<Category?> GetByIdAsync(int id);
-    Task<Category> CreateAsync(Category category);
-    Task UpdateAsync(int id, Category category);
+    Task<IEnumerable<CategoryReadDto>> GetAllAsync();
+    Task<CategoryReadDto?> GetByIdAsync(int id);
+    Task<CategoryReadDto> CreateAsync(CategoryWriteDto dto);
+    Task UpdateAsync(int id, CategoryWriteDto dto);
     Task DeleteAsync(int id);
 }

@@ -1,4 +1,3 @@
-using API.Mappings;
 using Entities;
 using Microsoft.EntityFrameworkCore;
 using Repositories;
@@ -13,7 +12,7 @@ builder.Services.AddDbContext<StoreDbContext>(options =>
     ));
 
 // AutoMapper
-builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
 // Repositories
 builder.Services.AddScoped<IProductRepository, ProductRepository>();

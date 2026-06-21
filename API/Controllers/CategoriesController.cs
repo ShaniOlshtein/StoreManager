@@ -1,7 +1,6 @@
-using API.DTOs;
-using Entities;
+using Common.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Services;
 
 namespace API.Controllers;
 
@@ -9,66 +8,39 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class CategoriesController : ControllerBase
 {
-    private readonly StoreDbContext _context;
+    private readonly ICategoryService _service;
 
-    public CategoriesController(StoreDbContext context)
-    {
-        _context = context;
-    }
+    public CategoriesController(ICategoryService service) => _service = service;
 
-    // GET api/categories
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<CategoryReadDto>>> GetAll()
-    {
-        var categories = await _context.Categories.ToListAsync();
-        return Ok(categories.Select(ToReadDto));
-    }
+    public async Task<ActionResult<IEnumerable<CategoryReadDto>>> GetAll() =>
+        Ok(await _service.GetAllAsync());
 
-    // GET api/categories/5
     [HttpGet("{id}")]
     public async Task<ActionResult<CategoryReadDto>> GetById(int id)
     {
-        var category = await _context.Categories.FindAsync(id);
-        return category is null ? NotFound() : Ok(ToReadDto(category));
+        var category = await _service.GetByIdAsync(id);
+        return category is null ? NotFound() : Ok(category);
     }
 
-    // POST api/categories
     [HttpPost]
     public async Task<ActionResult<CategoryReadDto>> Create(CategoryWriteDto dto)
     {
-        var category = new Category { Name = dto.Name };
-        _context.Categories.Add(category);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetById), new { id = category.Id }, ToReadDto(category));
+        var created = await _service.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    // PUT api/categories/5
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, CategoryWriteDto dto)
     {
-        var category = await _context.Categories.FindAsync(id);
-        if (category is null) return NotFound();
-
-        category.Name = dto.Name;
-        await _context.SaveChangesAsync();
+        await _service.UpdateAsync(id, dto);
         return NoContent();
     }
 
-    // DELETE api/categories/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var category = await _context.Categories.FindAsync(id);
-        if (category is null) return NotFound();
-
-        _context.Categories.Remove(category);
-        await _context.SaveChangesAsync();
+        await _service.DeleteAsync(id);
         return NoContent();
     }
-
-    private static CategoryReadDto ToReadDto(Category c) => new()
-    {
-        Id = c.Id,
-        Name = c.Name
-    };
 }

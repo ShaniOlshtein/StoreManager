@@ -1,7 +1,6 @@
-using API.DTOs;
-using Entities;
+using Common.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Services;
 
 namespace API.Controllers;
 
@@ -9,78 +8,39 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class ProductsController : ControllerBase
 {
-    private readonly StoreDbContext _context;
+    private readonly IProductService _service;
 
-    public ProductsController(StoreDbContext context)
-    {
-        _context = context;
-    }
+    public ProductsController(IProductService service) => _service = service;
 
-    // GET api/products
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductReadDto>>> GetAll()
-    {
-        var products = await _context.Products.ToListAsync();
-        return Ok(products.Select(ToReadDto));
-    }
+    public async Task<ActionResult<IEnumerable<ProductReadDto>>> GetAll() =>
+        Ok(await _service.GetAllAsync());
 
-    // GET api/products/5
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductReadDto>> GetById(int id)
     {
-        var product = await _context.Products.FindAsync(id);
-        return product is null ? NotFound() : Ok(ToReadDto(product));
+        var product = await _service.GetByIdAsync(id);
+        return product is null ? NotFound() : Ok(product);
     }
 
-    // POST api/products
     [HttpPost]
     public async Task<ActionResult<ProductReadDto>> Create(ProductWriteDto dto)
     {
-        var product = ToEntity(dto);
-        _context.Products.Add(product);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetById), new { id = product.Id }, ToReadDto(product));
+        var created = await _service.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    // PUT api/products/5
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, ProductWriteDto dto)
     {
-        var product = await _context.Products.FindAsync(id);
-        if (product is null) return NotFound();
-
-        product.Name = dto.Name;
-        product.Price = dto.Price;
-        product.CategoryId = dto.CategoryId;
-
-        await _context.SaveChangesAsync();
+        await _service.UpdateAsync(id, dto);
         return NoContent();
     }
 
-    // DELETE api/products/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var product = await _context.Products.FindAsync(id);
-        if (product is null) return NotFound();
-
-        _context.Products.Remove(product);
-        await _context.SaveChangesAsync();
+        await _service.DeleteAsync(id);
         return NoContent();
     }
-
-    private static ProductReadDto ToReadDto(Product p) => new()
-    {
-        Id = p.Id,
-        Name = p.Name,
-        Price = p.Price,
-        CategoryId = p.CategoryId
-    };
-
-    private static Product ToEntity(ProductWriteDto dto) => new()
-    {
-        Name = dto.Name,
-        Price = dto.Price,
-        CategoryId = dto.CategoryId
-    };
 }

@@ -1,6 +1,6 @@
-namespace API.DTOs;
+namespace Common.DTOs;
 
-public class OrderItemWriteDto
+public class OrderItemReadDto
 {
     public int OrderId { get; set; }
     public int ProductId { get; set; }

@@ -1,12 +1,12 @@
-using Entities;
+using Common.DTOs;
 
 namespace Services;
 
 public interface IOrderItemService
 {
-    Task<IEnumerable<OrderItem>> GetAllAsync();
-    Task<OrderItem?> GetByIdAsync(int orderId, int productId);
-    Task<OrderItem> CreateAsync(OrderItem orderItem);
-    Task UpdateAsync(int orderId, int productId, OrderItem orderItem);
+    Task<IEnumerable<OrderItemReadDto>> GetAllAsync();
+    Task<OrderItemReadDto?> GetByIdAsync(int orderId, int productId);
+    Task<OrderItemReadDto> CreateAsync(OrderItemWriteDto dto);
+    Task UpdateAsync(int orderId, int productId, OrderItemWriteDto dto);
     Task DeleteAsync(int orderId, int productId);
 }

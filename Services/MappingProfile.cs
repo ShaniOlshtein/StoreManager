@@ -1,8 +1,8 @@
-using API.DTOs;
 using AutoMapper;
+using Common.DTOs;
 using Entities;
 
-namespace API.Mappings;
+namespace Services;
 
 public class MappingProfile : Profile
 {

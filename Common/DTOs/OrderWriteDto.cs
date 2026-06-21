@@ -1,4 +1,4 @@
-namespace API.DTOs;
+namespace Common.DTOs;
 
 public class OrderWriteDto
 {

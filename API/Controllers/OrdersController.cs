@@ -1,7 +1,6 @@
-using API.DTOs;
-using Entities;
+using Common.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Services;
 
 namespace API.Controllers;
 
@@ -9,67 +8,39 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class OrdersController : ControllerBase
 {
-    private readonly StoreDbContext _context;
+    private readonly IOrderService _service;
 
-    public OrdersController(StoreDbContext context)
-    {
-        _context = context;
-    }
+    public OrdersController(IOrderService service) => _service = service;
 
-    // GET api/orders
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<OrderReadDto>>> GetAll()
-    {
-        var orders = await _context.Orders.ToListAsync();
-        return Ok(orders.Select(ToReadDto));
-    }
+    public async Task<ActionResult<IEnumerable<OrderReadDto>>> GetAll() =>
+        Ok(await _service.GetAllAsync());
 
-    // GET api/orders/5
     [HttpGet("{id}")]
     public async Task<ActionResult<OrderReadDto>> GetById(int id)
     {
-        var order = await _context.Orders.FindAsync(id);
-        return order is null ? NotFound() : Ok(ToReadDto(order));
+        var order = await _service.GetByIdAsync(id);
+        return order is null ? NotFound() : Ok(order);
     }
 
-    // POST api/orders
     [HttpPost]
     public async Task<ActionResult<OrderReadDto>> Create(OrderWriteDto dto)
     {
-        var order = new Order { CustomerName = dto.CustomerName };
-        _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetById), new { id = order.Id }, ToReadDto(order));
+        var created = await _service.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    // PUT api/orders/5
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, OrderWriteDto dto)
     {
-        var order = await _context.Orders.FindAsync(id);
-        if (order is null) return NotFound();
-
-        order.CustomerName = dto.CustomerName;
-        await _context.SaveChangesAsync();
+        await _service.UpdateAsync(id, dto);
         return NoContent();
     }
 
-    // DELETE api/orders/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var order = await _context.Orders.FindAsync(id);
-        if (order is null) return NotFound();
-
-        _context.Orders.Remove(order);
-        await _context.SaveChangesAsync();
+        await _service.DeleteAsync(id);
         return NoContent();
     }
-
-    private static OrderReadDto ToReadDto(Order o) => new()
-    {
-        Id = o.Id,
-        OrderDate = o.OrderDate,
-        CustomerName = o.CustomerName
-    };
 }
