@@ -18,13 +18,13 @@ public class OrderService : IOrderService
 
     public async Task<IEnumerable<OrderReadDto>> GetAllAsync()
     {
-        var orders = await _repo.GetAllAsync();
+        var orders = await _repo.GetAllWithItemsAsync();
         return _mapper.Map<IEnumerable<OrderReadDto>>(orders);
     }
 
     public async Task<OrderReadDto?> GetByIdAsync(int id)
     {
-        var order = await _repo.GetByIdAsync(id);
+        var order = await _repo.GetByIdWithItemsAsync(id);
         return order is null ? null : _mapper.Map<OrderReadDto>(order);
     }
 

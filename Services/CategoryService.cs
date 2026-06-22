@@ -7,10 +7,10 @@ namespace Services;
 
 public class CategoryService : ICategoryService
 {
-    private readonly IGenericRepository<Category> _repo;
+    private readonly ICategoryRepository _repo;
     private readonly IMapper _mapper;
 
-    public CategoryService(IGenericRepository<Category> repo, IMapper mapper)
+    public CategoryService(ICategoryRepository repo, IMapper mapper)
     {
         _repo = repo;
         _mapper = mapper;

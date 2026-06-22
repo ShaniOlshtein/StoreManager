@@ -108,6 +108,24 @@ namespace Entities.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("Entities.Supplier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Suppliers");
+                });
+
             modelBuilder.Entity("Entities.OrderItem", b =>
                 {
                     b.HasOne("Entities.Order", "Order")

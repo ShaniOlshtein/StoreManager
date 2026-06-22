@@ -14,8 +14,10 @@ public class MappingProfile : Profile
         CreateMap<Category, CategoryReadDto>();
         CreateMap<CategoryWriteDto, Category>();
 
-        CreateMap<Order, OrderReadDto>();
-        CreateMap<OrderWriteDto, Order>();
+        CreateMap<Order, OrderReadDto>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderItems));
+        CreateMap<OrderWriteDto, Order>()
+            .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.Items));
 
         CreateMap<OrderItem, OrderItemReadDto>();
         CreateMap<OrderItemWriteDto, OrderItem>();
