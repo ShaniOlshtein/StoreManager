@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 
 namespace Entities;
 
@@ -7,9 +8,14 @@ public class StoreDbContextFactory : IDesignTimeDbContextFactory<StoreDbContext>
 {
     public StoreDbContext CreateDbContext(string[] args)
     {
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../API"))
+            .AddJsonFile("appsettings.json")
+            .Build();
+
         var optionsBuilder = new DbContextOptionsBuilder<StoreDbContext>();
         optionsBuilder.UseMySql(
-            "Server=mysql-20638794-rivkakatz200-41fb.i.aivencloud.com;Port=13227;Database=defaultdb;User=avnadmin;Password=AVNS_x5Ne9hSMqBGGNyyldi8;SslMode=Required;",
+            config.GetConnectionString("DefaultConnection"),
             new MySqlServerVersion(new Version(8, 0, 0))
         );
         return new StoreDbContext(optionsBuilder.Options);
